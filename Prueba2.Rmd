@@ -1,0 +1,158 @@
+---
+title: "Análisis de mercado de bienes duraderos: Vehículos nuevos y usados"
+subtitle: "Prueba 2"
+output: html_document
+date: "2022-12-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Este informe busca evidenciar la relación existente entre el *mercado de automóviles* nuevos y usados de la economía estadounidense. Con la finalidad de contextualizar al lector acerca de la relación entre los mercados, se utiliza el periíodo de pandemia para explicar cómo los choques sobre la oferta y la demanda provocaron una variación en el comportamiento de los precios de los automóviles nuevos, donde parte de lo que sucedió en ese mercado se _filtró_ al mercado secundario.
+
+Por el lado de la _oferta_, se analizará cómo la cadena de suministros afectó la producción de autos nuevos y, por el lado de la _demanda_, se considera y se tiene como hipótesis que las personas cambiaron sus preferencias en cuanto a transporte debido a los riesgos de salud en este periodo. Asimismo, según la teoría de los mercados de _**bienes duraderos**_, se considerará el efecto que tiene una disminución de producción de autos nuevos sobre la oferta de vehículos usados en el *futuro* y sobre la demanda de los mismos en el corto plazo. En este sentido, la demanda que no podrá ser satisfecha en el mercado de autos nuevos en vista de la menor producción, se reorientará hacia el mercado secundario y, en el periodo **_t+1_**, vendrá choque de oferta sobre el mercado de autos usados que agravará todavía más la situación.
+
+Para conducir esta investigación se presentará primero el proceso inicial de la programación. Se utilizarán las siguientes librerías para leer, procesar y graficar datos:
+
+```{r, include=FALSE}
+library(dslabs)
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+library(ggthemes)
+library(gridExtra)
+```
+
+### Datos
+
+En la tabla `vehiculos` se encuentran limpios los datos relacionados al mercado de vehículos:
+
+```{r}
+load("vehiculos.rdata")
+head(vehiculos)
+```
+donde las variables representan lo siguiente:
+
+- `var_CPI_nuevo`: variación porcentual respecto al año anterior del índice de precios de ventas de vehículos nuevos mensual, ajustado estacionalmente.
+
+- `var_CPI_usado`: variación porcentual respecto al año anterior del índice de precios de ventas de vehículos usados mensual, ajustado estacionalmente.
+
+- `produccion`: Producción doméstica (EEUU) de automóviles.
+
+- `CPI_nuevo`: Índice de Precios al Consumidor para todos los consumidores urbanos: vehículos nuevos en EEUU, ajustado estacionalmente
+
+
+Dichos datos fueron extraídos de la página oficial de la Reserva Federal de los Estados Unidos (FRED) y representan la muestra de abril de 1996 hasta octubre de 2022, es decir, 318 observaciones con frecuencia mensual.
+
+## Choque de oferta en el mercado
+
+Para identificar el momento preciso en que las cadenas de suministro a nivel mundial se vieron perjudicadas por la *pandemia* y otros factores, así como ver reflejada su magnitud, se compararán los datos de producción y precios de los vehículos nuevos en los EEUU. 
+
+La elaboración de los gráficos se puede desglosar de la siguiente manera:
+
+- Dentro de aes de la función `ggplot` se especificaron las variables para los dos ejes. Tanto la gráfica de producción como la de índice de precios son líneas de tiempo con el período en intervalos mensuales para el eje x (`fecha`), tal que:  `ggplot(aes(fecha,"produccion"))`
+
+- Con la función `labs` se definió el título y el nombre de los ejes.
+
+- Con `themes` se dieron los toques finales a la posición del título: `theme(plot.title = element_text(hjust = 0.5))`.
+
+- Finalmente, para una mejor visualización de ambos gráficos, se utilizó el comando `grid.arrange` separando verticalmente. 
+
+
+```{r, eval=FALSE}
+p1 <- vehiculos %>%
+  ggplot(aes(fecha, `produccion`)) +
+  geom_line(colour = 3, linewidth = 1.4) +
+  theme_pander() +
+  labs(title = "Produccion Domestica de Automoviles",
+       x = "Años",
+       y = "Produccion en miles") +
+        theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+p2 <- vehiculos %>%
+  ggplot(aes(fecha, `CPI nuevo`)) +
+  geom_line(colour= 4, linewidth = 2) +
+  theme_pander() +
+  labs(title = "Indice de Precios del Consumidor (Nuevos Vehiculos)",
+       x="Años",
+       y="Indice 1982-1984=100") +
+        theme(plot.title = element_text(hjust = 0.5, size = 10))
+
+grid.arrange(p1, p2, nrow = 2)
+```
+
+```{r, fig.width=6, fig.height=6, echo=FALSE}
+p1 <- vehiculos%>%
+  ggplot(aes(fecha,`produccion`))+
+  geom_line(colour= 3,linewidth = 1.4)+
+  theme_pander()+
+  labs(title = "Produccion Domestica de Automoviles",
+       x="Años",
+       y="Produccion en miles")+
+  theme(plot.title = element_text(hjust = 0.5, size = 10),
+        plot.tag.position = "bottomright")
+
+p2 <- vehiculos%>%
+  ggplot(aes(fecha,`CPI nuevo`))+
+  geom_line(colour= 4,linewidth = 2)+
+  theme_pander()+
+  labs(title = "Indice de Precios del Consumidor (Nuevos Vehiculos)",
+       x="Años",
+       y="Indice 1982-1984=100")+
+  theme(plot.title = element_text(hjust = 0.5, size = 10),
+        plot.tag.position = "bottomright")
+
+grid.arrange(p1, p2, nrow = 2)
+```
+
+Un aspecto resaltante de esta comparación es la identificación de un cambio en la correlación entre producción y precios aproximadamente por 2015, cuando la producción comenzó a decrecer mientras que los precios continuaron elevándose. Este comportamiento está posiblemente relacionado a un mercado de automóviles que respondía a la demanda y los precios que ésta generaba pero, a partir de 2015, dificultades del lado de producción presentaron un cambio en la relación.
+
+Se puede evidenciar, también que el choque de precios por la pandemia vino acompañado de un freno a la producción en 2020, pero continuó elevándose a pesar de la relativa recuperación del _output_ en vista de la política expansiva del gobierno que elevó la tasa de inflación.
+
+## Un pequeño salto para los nuevos, uno grande para los usados
+
+Continuando la idea anterior del *shock de oferta*, parece relevante evaluar las posibles diferencias en el impacto de corto plazo que tuvo la menor producción de autos nuevos. En un mercado donde los concesionarios tienden a tener mayor rigidez de precios que en el secundario de autos usados, la relativa escasez de vehículos nuevos y la inminente inflación como resultado de las políticas fiscales expansivas del período pueden haber tenido efectos completamente distintos sobre los precios. De esta manera, se presenta a continuación un gráfico que relaciona las variaciones de los precios simultáneamente en estos dos mercados.
+
+El gráfico consiste de dos categorías para la misma variable, vehículos nuevos y vehículos usados. Se elaboró de la siguiente manera:
+
+- Partiendo de una tabla con cada categoría en una columna distinta, con `ggplot` se definió el eje horizontal común para las dos variables, tal que `ggplot(vehiculos, aes(x = fecha))`.
+
+- `geom_line`, luego, se utilizó para definir las características de las dos líneas a graficar, asignando un color distinto a cada una con el argumento de `color =`, así como un grosor mayor para mejorar su visualización con `linewidth =`.
+
+- Por último, `labs(title = "Variación de CPI: Nuevos vs. Usados", x = "Años", y = "Var. Indice 1982-1984=100")` le dio nombre a las partes de la figura. 
+
+```{r, eval=FALSE}
+
+p <- ggplot(vehiculos, aes(x = fecha))
+
+p +
+  geom_line(aes(y = `var CPI nuevo`), color = 4, linewidth = 1.5) +
+  geom_line(aes(y = `var CPI usado`), color = 2, linewidth = 1.5) +
+  labs(title = "Variación de CPI: Nuevos vs. Usados",
+       x="Años",
+       y="Var. Indice 1982-1984=100") +
+        theme(plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+```{r, fig.width=6, fig.height=4, echo=FALSE}
+
+p <- ggplot(vehiculos, aes(x = fecha))
+
+p +
+  geom_line(aes(y = `var CPI nuevo`), color = 4, linewidth = 1.5) +
+  geom_line(aes(y = `var CPI usado`), color = 2, linewidth = 1.5) +
+  labs(title = "Variación de CPI: Nuevos vs. Usados",
+       x="Años",
+       y="Var. Indice 1982-1984=100") +
+        theme(plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+Esta gráfica es muy interesante, pues refleja un mercado de vehículos usados altamente afectado por el choque de oferta al que se refirió en los gráficos anteriores. La elasticidad de los dos mercados en relación a la demanda en una de las razones pero, ¿cómo se puede describir el proceso para que esto suceda? Bueno, de la teoría de mercados de bienes duraderos, se sabe que la producción de hoy compite con la producción de mañana en la medida en que se puedan "reciclar" o continuar usando los bienes en el siguiente período. Si en el siguiente período, el productor deja de producir, el mercado será exclusivamente de autos usados, lo cual sucedió por un corto período de tiempo en 2020, como se pudo ver en el gráfico de producción. De esta manera, como la oferta del mercado secundario está predeterminada por la producción en el período anterior y no hay capacidad de aumentar la producción de autos usados, los precios *literalmente* explotaron (ok, no literalmente). 
+
+Por supuesto, ya se está evidenciando en la actualidad una _normalización_ de los precios en este mercado, es decir, una aproximación de las variaciones de los precios en ambos mercados.
+
+A modo de conclusión, retomando las ideas de las que se partió al inicio, se hace evidente que el choque de oferta en este mercado no es algo que se le pueda atribuir 100% a la pandemia, sino que factores como el acceso a insumos como *semiconductores* y demás han generado un cambio en el mercado. En cuanto al mercado de vehículos usados, se evidencia una volatilidad superior que indica una mayor elasticidad de precios a la demanda, lo cual fue crucial en definir el comportamiento durante la pandemia explicado anteriormente.
+
+
